@@ -65,15 +65,16 @@ class SimpleCarModel : public BaseRobotSE2
     int getInputDimension() const override { return 2; }
 
     // implements interface method
+    // 运动模型公式
     void dynamics(const Eigen::Ref<const StateVector>& x, const Eigen::Ref<const ControlVector>& u, Eigen::Ref<StateVector> f) const override
     {
         assert(x.size() == getStateDimension());
         assert(u.size() == getInputDimension());
         assert(x.size() == f.size() && "SimpleCarModel::dynamics(): x and f are not of the same size, do not forget to pre-allocate f.");
 
-        f[0] = u[0] * std::cos(x[2]);
-        f[1] = u[0] * std::sin(x[2]);
-        f[2] = u[0] * std::tan(u[1]) / _wheelbase;
+        f[0] = u[0] * std::cos(x[2]);   // v * cos(psi)
+        f[1] = u[0] * std::sin(x[2]);   // v * sin(psi)
+        f[2] = u[0] * std::tan(u[1]) / _wheelbase; // v * tan(delta) / L
     }
 
     // implements interface method

@@ -46,8 +46,9 @@ find_package(control_box_rst QUIET COMPONENTS
   optimization
   optimal_control
   systems
-  PATH_SUFFIXES share/control_box_rst control_box_rst
-  PATHS ${CMAKE_BINARY_DIR} /usr/local
+  PATH_SUFFIXES control_box_rst share/control_box_rst
+  PATHS ${CMAKE_SOURCE_DIR}/control_box_rst/install
+  # PATHS ${CMAKE_BINARY_DIR} /usr/local
 )
 
 # Eigen3 FindScript Backward compatibility (ubuntu saucy)
@@ -189,6 +190,8 @@ add_library(mpc_local_planner
    src/controller.cpp
    src/mpc_local_planner_ros.cpp
 )
+# catkin_packages(CATKIN_DEPENDS teb_local_planner)
+# add_dependencies(mpc_local_planner teb_local_planner)
 
 # Dynamic reconfigure: make sure configure headers are built before any node using them
 add_dependencies(mpc_local_planner ${PROJECT_NAME}_gencfg)

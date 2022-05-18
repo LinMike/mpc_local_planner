@@ -58,8 +58,8 @@ class ForwardDiffCollocationSE2 : public corbo::FiniteDifferencesCollocationInte
         assert(x1.size() >= 3);
         // assert(dt > 0 && "dt must be greater then zero!");
 
-        system.dynamics(x1, u1, error);
-        error.head(2) -= (x2.head(2) - x1.head(2)) / dt;
+        system.dynamics(x1, u1, error);// 运动模型计算状态空间
+        error.head(2) -= (x2.head(2) - x1.head(2)) / dt;// x1状态和u1控制得到的x2状态与优化得到的x2的残差
         error.coeffRef(2) -= normalize_theta(x2.coeffRef(2) - x1.coeffRef(2)) / dt;
         if (x1.size() > 3)
         {

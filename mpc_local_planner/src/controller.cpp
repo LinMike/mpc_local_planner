@@ -58,7 +58,7 @@ namespace mpc_local_planner {
 bool Controller::configure(ros::NodeHandle& nh, const teb_local_planner::ObstContainer& obstacles,
                            teb_local_planner::RobotFootprintModelPtr robot_model, const std::vector<teb_local_planner::PoseSE2>& via_points)
 {
-    _dynamics = configureRobotDynamics(nh);
+    _dynamics = configureRobotDynamics(nh);// 设置robot运动模型
     if (!_dynamics) return false;  // we may need state and control dimensions to check other parameters
 
     _grid   = configureGrid(nh);
@@ -126,10 +126,10 @@ bool Controller::step(const std::vector<geometry_msgs::PoseStamped>& initial_pla
     PoseSE2 goal(initial_plan.back().pose);
 
     Eigen::VectorXd xf(_dynamics->getStateDimension());
-    _dynamics->getSteadyStateFromPoseSE2(goal, xf);
+    _dynamics->getSteadyStateFromPoseSE2(goal, xf);// 将目标点的[x, y, theta] 设置为参考点X_ref
 
     // retrieve or estimate current state
-    Eigen::VectorXd x(_dynamics->getStateDimension());
+    Eigen::VectorXd x(_dynamics->getStateDimension());// 设置状态维度
     // check for new measurements
     bool new_x = false;
     {
@@ -341,6 +341,12 @@ corbo::DiscretizationGridInterface::Ptr Controller::configureGrid(const ros::Nod
     return {};
 }
 
+/**
+ * @brief 设置robot的运动模型
+ *  1.unicycle
+ *  2.simple_car
+ *  3.kinematic_bicycle_vel_input
+ */
 RobotDynamicsInterface::Ptr Controller::configureRobotDynamics(const ros::NodeHandle& nh)
 {
     _robot_type = "unicycle";
@@ -550,24 +556,24 @@ corbo::StructuredOptimalControlProblem::Ptr Controller::configureOcp(const ros::
 
     std::string objective_type = "minimum_time";
     nh.param("planning/objective/type", objective_type, objective_type);
-    bool lsq_solver = _solver->isLsqSolver();
-
+    bool lsq_solver = _solver->isLsqSolver();// 最小二乘问题
+    
     if (objective_type == "minimum_time")
     {
         ocp->setStageCost(std::make_shared<corbo::MinimumTime>(lsq_solver));
     }
-    else if (objective_type == "quadratic_form")
+    else if (objective_type == "quadratic_form")// 二次型问题
     {
         std::vector<double> state_weights;
         nh.param("planning/objective/quadratic_form/state_weights", state_weights, state_weights);
         Eigen::MatrixXd Q;
         if (state_weights.size() == x_dim)
         {
-            Q = Eigen::Map<Eigen::VectorXd>(state_weights.data(), x_dim).asDiagonal();
+            Q = Eigen::Map<Eigen::VectorXd>(state_weights.data(), x_dim).asDiagonal();// 状态的每个维度的权重的对角阵
         }
         else if (state_weights.size() == x_dim * x_dim)
         {
-            Q = Eigen::Map<Eigen::MatrixXd>(state_weights.data(), x_dim, x_dim);  // Eigens default is column major
+            Q = Eigen::Map<Eigen::MatrixXd>(state_weights.data(), x_dim, x_dim);  // Eigens default is column major, 以列优先填充矩阵每个元素位置
         }
         else
         {
@@ -579,7 +585,7 @@ corbo::StructuredOptimalControlProblem::Ptr Controller::configureOcp(const ros::
         Eigen::MatrixXd R;
         if (control_weights.size() == u_dim)
         {
-            R = Eigen::Map<Eigen::VectorXd>(control_weights.data(), u_dim).asDiagonal();
+            R = Eigen::Map<Eigen::VectorXd>(control_weights.data(), u_dim).asDiagonal();// 控制参数每个维度的权重的对角阵
         }
         else if (control_weights.size() == u_dim * u_dim)
         {
@@ -590,7 +596,7 @@ corbo::StructuredOptimalControlProblem::Ptr Controller::configureOcp(const ros::
             ROS_ERROR_STREAM("Control weights dimension invalid. Must be either " << u_dim << " x 1 or " << u_dim << " x " << u_dim << ".");
             return {};
         }
-        bool integral_form = false;
+        bool integral_form = false;// 积分形式,离散形式
         nh.param("planning/objective/quadratic_form/integral_form", integral_form, integral_form);
         bool hybrid_cost_minimum_time = false;
         nh.param("planning/objective/quadratic_form/hybrid_cost_minimum_time", hybrid_cost_minimum_time, hybrid_cost_minimum_time);
